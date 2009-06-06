@@ -1,0 +1,21 @@
+# The libvirt URI to connect to. Some examples follow.
+# Schemes besides qemu and qemu+ssh have not been tested.
+
+# Connect to the default local session daemon
+LIBVIRT_URI = None
+
+# Same as above
+#LIBVIRT_URI = 'qemu:///session'
+
+# A remote system over an SSH tunnel.
+# This has only been tested with ~/.ssh/config set up to use
+# public key authentication for this host.
+#LIBVIRT_URI = 'qemu+ssh://user@node.local/system'
+
+
+# For SSH tunnels, this is the fingerprint we will accept.
+# Note that your regular SSH client also needs to know about
+# this fingerprint. This is because libvirt sets up a separate tunnel
+# out of our control, and just executes '/usr/bin/ssh ...' to do that.
+#FINGERPRINT = 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff'
+

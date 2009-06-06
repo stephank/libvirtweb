@@ -1,0 +1,113 @@
+#encoding utf-8
+#extends layout
+#def title
+   Node $h($hostname)
+#end def
+
+#def head
+<script type="text/javascript">
+function openconsole(domain) {
+   new Ajax.Updater('console', '/ajax_console/' + domain,
+         { insertion: 'bottom', evalScripts: true });
+}
+</script>
+#end def
+
+<div class="block node">
+   <h1>Node <span class="value">$h($hostname)</span></h1>
+   <div class="memory">
+      <p>Memory capacity: <span class="value number">
+         $n($node['memory']) KB
+      </span></p>
+      <p>Memory usage: <span class="value number">
+         $n($node['memoryusage']) KB
+      </span></p>
+      <div class="meter">
+         <div class="meterfill" style="width: $node['memoryusageperc']">
+            $node['memoryusageperc']
+         </div>
+      </div>
+   </div>
+
+   <p>Architecture: <span class="value">
+      $h($node['arch'])
+   </span></p>
+   <p>Processors: <span class="value">
+      $node['cpus'] × $n($node['mhz']) MHz
+   </span></p>
+
+   <div class="clear"></div>
+</div>
+
+<div class="block domains">
+   <h2>Domains:</h2>
+   #if $domains:
+      <table>
+      <thead>
+         <tr>
+            <th class="name">Name</th>
+            <th class="status">Status</th>
+            <th class="vcpus">Processors</th>
+            <th class="memory">Memory</th>
+            <th class="actions">Console</th>
+         </tr>
+      </thead>
+      <tbody>
+         #for $domain in $domainnames:
+            #set $info = $domains[$domain]
+            <tr class="$info['stateclass']">
+               <td class="name">$h($domain)</td>
+               <td class="status">$h($info['state'])</td>
+               <td class="vcpus">$info['vcpus'] ×</td>
+               <td class="memory">
+                  #if $info['memory'] == $info['maxmemory']:
+                     $n($info['memory']) KB
+                  #else
+                     $n($info['memory']) - $n($info['maxmemory']) KB
+                  #end if
+               </td>
+               <td class="actions">
+                  <a class="console" href="javascript:openconsole('$h($domain)')">Open console</a>
+               </td>
+            </tr>
+         #end for
+      </tbody>
+      </table>
+   #else:
+      <p>No domains to list.</p>
+   #end if
+
+   <div class="clear"></div>
+</div>
+<div id="console" class="hidden"></div>
+
+<div class="block networks">
+   <h2>Networks:</h2>
+   #if $networks:
+      <ul>
+         #for $network in $networks:
+            <li>$h($network)</li>
+         #end for
+      </ul>
+   #else:
+      <p>No networks to list.</p>
+   #end if
+
+   <div class="clear"></div>
+</div>
+
+<div class="block storagepools">
+   <h2>Storage pools:</h2>
+   #if $storagePools:
+      <ul>
+         #for $storagePool in $storagePools:
+            <li>$h($storagePool)</li>
+         #end for
+      </ul>
+   #else:
+      <p>No storage pools to list.</p>
+   #end if
+
+   <div class="clear"></div>
+</div>
+

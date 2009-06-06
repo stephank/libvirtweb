@@ -1,0 +1,77 @@
+## Intro
+
+This is a web interface to libvirt. It is currently in the alpha stage of
+development, and thus far from feature complete or stable.
+
+Currently, it is capable of:
+ * Viewing basic info about a node, it's networks and storage pools.
+ * Viewing a bit more info about domains and their state.
+ * Connecting a Java-based VNC viewer to a console.
+
+The goal is to provide a simple web interface to libvirt. Quite like
+virt-manager now provides, but for the web. Not like oVirt, which is something
+you can't simply drop on top of your existing libvirt installation.
+
+The project is distributed with the GNU GPL version 2 license. A copy is
+included as the LICENSE file.
+
+
+## Dependencies
+
+There's a bunch of dependencies. Most of these will be installable by your
+distribution's package manager. If problems occur, check the versions of
+the packages you are running.
+
+Here's a brief list of dependencies, and their version numbers, that were used
+during development. Sometimes, a slightly older version may work.
+ * Python 2.6.2      ( http://python.org/ )
+ * lxml 2.2.1        ( http://codespeak.net/lxml/ )
+ * Twisted 8.2.0     ( http://twistedmatrix.com/ )
+ * Cheetah 2.2.1     ( http://cheetahtemplate.org/ )
+ * CherryPy 3.1.2    ( http://cherrypy.org/ )
+ * libvirt 0.6.1     ( http://libvirt.org/ )
+ * pyOpenSSL 0.7.2   ( http://pyopenssl.sourceforge.net/ )
+ * PyCrypto 2.0.1    ( http://www.amk.ca/python/code/crypto.html )
+ * pyasn1 0.0.8a     ( http://pyasn1.sourceforge.net/ )
+
+And for building the Java VNC viewer applet:
+ * Sun JDK 6         ( http://java.sun.com/javase/ )
+
+
+## Quick start
+
+Build the Java VNC viewer applet.
+$ cd vncviewer
+$ make all
+$ cd ..
+$ cp vncviewer/VncViewer.jar static/
+
+Generate an RSA keypair and certificate for the website:
+$ ./gencert.sh
+
+Take the sample config file and customize it:
+$ cp config.py.sample config.py
+$ nano config.py
+
+Start the server:
+$ ./server.py
+
+Navigate to: https://localhost:8443/
+
+
+### Additional notes
+
+When using an SSH connection, the recommended way is to set up a
+password-less keypair for the website. ~/.ssh/config is read to find
+out where the private key is stored, so even if you have a working keypair,
+make sure you explicitely specify where it's located in there.
+
+For example, set up your ~/.ssh/config as:
+ Host virthost
+    Hostname virthost.myorg.org
+    Username virtuser
+    IdentityFile ~/.ssh/id_rsa.virt
+    PreferredAuthentications publickey
+
+And then set LIBVIRT_URI to: qemu+ssh://virthost/system
+

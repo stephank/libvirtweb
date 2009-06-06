@@ -1,0 +1,16 @@
+#encoding utf-8
+
+#def respond
+   #if $cookie is not None:
+      <applet code="VncViewer.class" archive="/static/VncViewer.jar" class="console">
+         <param name="PORT" value="5900">
+         <param name="COOKIE" value="$cookie">
+         <param name="Open New Window" value="Yes">
+      </applet>
+   #else
+      <script type="text/javascript">
+         alert("Console not available");
+      </script>
+   #end if
+#end def
+
