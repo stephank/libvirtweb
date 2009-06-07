@@ -46,7 +46,7 @@ class RFBCookieContainer(object):
             del self.cookies[cookie]
             timer.cancel()
             log.msg("Retrieved cookie: %s" % binascii.hexlify(cookie))
-            return value
+            return cookie, value
 
 threadable.synchronize(RFBCookieContainer)
 

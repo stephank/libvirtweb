@@ -1,6 +1,7 @@
 from twisted.internet import protocol, defer
 from twisted.conch.ssh import forwarding
 from twisted.python import log
+from Crypto.Cipher import AES
 import os, struct, common, binascii
 import sshtunnel
 
@@ -97,19 +98,33 @@ class RFBProxyServer(protocol.Protocol):
 
    def authenticationStage(self):
       """Handle the challenge response for the client, and start the proxy connection."""
-      if len(self.buffer) < 16:
+      if len(self.buffer) < 32:
          return
 
-      attempt, self.buffer = self.buffer[:16], self.buffer[16:]
+      attempt, iv, self.buffer = self.buffer[:16], self.buffer[16:32], self.buffer[32:]
       # Check which cookie to use
-      info = common.cookies.pop(self.challenge, attempt)
+      cookie, info = common.cookies.pop(self.challenge, attempt)
       if info is None:
          log.msg("Client failed to authenticate")
+         # Send a dummy IV
+         self.transport.write(16 * '\x00')
          # Failure code, error description
          self.transport.write(struct.pack('!l', 1) + self.varstring("Authentication failed"))
          self.transport.loseConnection()
          return
-      # Post-pone response until finishSetup
+
+      # Take the input stream IV, and generate an IV for the output stream
+      aesobj = AES.new(cookie, AES.MODE_ECB)
+      iniv = aesobj.decrypt(iv)
+      outiv = os.urandom(16)
+      encryptediv = aesobj.encrypt(outiv)
+      self.transport.write(encryptediv)
+
+      # Prepare the AES instances for encryption
+      self.inaes = AES.new(cookie, AES.MODE_CFB, iniv, segment_size=8)
+      self.outaes = AES.new(cookie, AES.MODE_CFB, outiv, segment_size=8)
+
+      # Post-pone authentication response until finishSetup
       del self.challenge
       self.state = RFBState.SETUP
       connectVNC(self, info).addCallbacks(self.finishSetup, self.bail)
@@ -135,13 +150,13 @@ class RFBProxyServer(protocol.Protocol):
 
    def indata(self, data):
       """While the connection is established, encrypt and proxy data from the server."""
-      # FIXME: AES encrypt
-      self.transport.write(data)
+
+      self.transport.write(self.outaes.encrypt(data))
 
    def outdata(self, data):
       """While the connection is established, decrypt and proxy data from the client."""
-      # FIXME: AES decrypt
-      self.clientproto.transport.write(data)
+
+      self.clientproto.transport.write(self.inaes.decrypt(data))
 
    def connectionLost(self, reason):
       if hasattr(self, 'clientproto'):

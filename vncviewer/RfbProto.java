@@ -29,6 +29,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.Socket;
 import java.util.zip.*;
+import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -325,15 +326,40 @@ class RfbProto {
   //
 
   void authenticateAES(byte[] cookie) throws Exception {
+    SecretKeySpec keyspec = new SecretKeySpec(cookie, "AES");
+
+    // Read and encrypt the challenge
     byte[] challenge = new byte[16];
     readFully(challenge);
-
-    SecretKeySpec skeySpec = new SecretKeySpec(cookie, "AES");
     Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-    cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
+    cipher.init(Cipher.ENCRYPT_MODE, keyspec);
     byte[] encryptedchallenge = cipher.doFinal(challenge);
-
     os.write(encryptedchallenge);
+
+    // Generate and encrypt an IV the output stream
+    byte[] outiv = new byte[16];
+    SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
+    prng.nextBytes(outiv);
+    byte[] encryptedoutiv = cipher.doFinal(outiv);
+    os.write(encryptedoutiv);
+
+    Cipher outcipher = Cipher.getInstance("AES/CFB8/NoPadding");
+    IvParameterSpec ivspec = new IvParameterSpec(outiv);
+    outcipher.init(Cipher.ENCRYPT_MODE, keyspec, ivspec);
+
+    // Read and decrypt the IV for the input stream
+    byte[] encryptediniv = new byte[16];
+    readFully(encryptediniv);
+    cipher.init(Cipher.DECRYPT_MODE, keyspec);
+    byte[] iniv = cipher.doFinal(encryptediniv);
+
+    Cipher incipher = Cipher.getInstance("AES/CFB8/NoPadding");
+    ivspec = new IvParameterSpec(iniv);
+    incipher.init(Cipher.DECRYPT_MODE, keyspec, ivspec);
+
+    // Wrap the socket's streams
+    rawis = new CipherInputStream(rawis, incipher);
+    os = new CipherOutputStream(os, outcipher);
 
     readSecurityResult("AES cookie authentication");
   }
