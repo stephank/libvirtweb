@@ -1,0 +1,6 @@
+*.pyc
+*.pyo
+config.py
+server.cert
+server.key
+server.log
