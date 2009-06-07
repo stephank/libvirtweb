@@ -165,6 +165,7 @@ class RfbProto {
   // Input stream is declared private to make sure it can be accessed
   // only via RfbProto methods. We have to do this because we want to
   // count how many bytes were read.
+  private InputStream rawis;
   private DataInputStream is;
   private long numBytesRead = 0;
   public long getNumBytesRead() { return numBytesRead; }
@@ -206,8 +207,8 @@ class RfbProto {
     viewer = v;
 
     sock = new Socket(h, p);
-    is = new DataInputStream(new BufferedInputStream(sock.getInputStream(),
-						     16384));
+    rawis = sock.getInputStream();
+    is = new DataInputStream(rawis);
     os = sock.getOutputStream();
 
     timing = false;
@@ -348,6 +349,9 @@ class RfbProto {
     switch (securityResult) {
     case VncAuthOK:
       System.out.println(authType + ": success");
+      // Rebuild the DataInputStream, because rawis might be wrapped
+      // by a filter at this point.
+      is = new DataInputStream(new BufferedInputStream(rawis, 16384));
       break;
     case VncAuthFailed:
       readConnFailedReason();
