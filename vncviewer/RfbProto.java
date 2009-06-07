@@ -328,11 +328,11 @@ class RfbProto {
     readFully(challenge);
 
     SecretKeySpec skeySpec = new SecretKeySpec(cookie, "AES");
-    Cipher cipher = Cipher.getInstance("AES");
+    Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
     cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
     byte[] encryptedchallenge = cipher.doFinal(challenge);
 
-    os.write(encryptedchallenge, 0, 16);
+    os.write(encryptedchallenge);
 
     readSecurityResult("AES cookie authentication");
   }
