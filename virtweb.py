@@ -63,7 +63,9 @@ def deftemplate(name, mainMethodName='content'):
    def tmpl(**kwargs):
       searchList = {'h': htmlescape, 'n': prettynumber}
       searchList.update(kwargs)
-      return klass(searchList=searchList).respond()
+      inst = klass(searchList=searchList)
+      cherrypy.response.headers['Content-Type'] = inst.content_type
+      return inst.respond()
    globals()[name] = tmpl
 
 
