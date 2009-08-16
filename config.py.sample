@@ -3,6 +3,7 @@
 
 # Connect to the default local session daemon
 LIBVIRT_URI = None
+LOCALE = 'en_US.UTF-8'
 
 # Same as above
 #LIBVIRT_URI = 'qemu:///session'
