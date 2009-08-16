@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 TEMPLATE_DIR = 'templates'
-LOCALE = 'en_US.UTF-8'
 
 from config import LIBVIRT_URI
+from config import LOCALE
 from lxml import etree
 from twisted.python import threadpool
 from twisted.web import wsgi, server
