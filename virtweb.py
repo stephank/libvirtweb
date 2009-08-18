@@ -2,7 +2,7 @@
 
 TEMPLATE_DIR = 'templates'
 
-from config import LIBVIRT_URI
+from config import LIBVIRT_URIS
 from config import LOCALE
 from lxml import etree
 from twisted.python import threadpool
@@ -86,6 +86,7 @@ def maplist(elements, names):
 deftemplate('layout', mainMethodName='respond')
 
 # Page templates
+deftemplate('main_index')
 deftemplate('node_index')
 
 # Ajax templates
@@ -94,8 +95,9 @@ deftemplate('ajax_console')
 
 class Node(object):
 
-   def __init__(self, uri=None):
-      self.uri = uri
+   def __init__(self, uris=[]):
+      self.uris = uris
+      self.conns = {}
 
       # FIXME: We should probably have a separate thread hosting the
       # libvirt connection instance, or even a pool of them, because
@@ -104,23 +106,40 @@ class Node(object):
       # The would also allow us to monitor CPU usage and show graphs
       # like virt-manager. And we need to beat virt-manager in awesomeness.
 
-      try:
-         self.conn = libvirt.openReadOnly(uri)
-      except libvirt.libvirtError:
-         raise ValueError("Could not open the given URI.")
+      for uri in uris:
+         try:
+            conn = libvirt.openReadOnly(uri)
+            hostname = conn.getHostname()
+         except libvirt.libvirtError:
+            raise ValueError("Could not open the given URI: %s" % uri)
+         if hostname in self.conns:
+            raise ValueError("Two hosts report the same hostname: %s" % hostname)
+         self.conns[hostname] = (uri, conn)
 
    @cherrypy.expose
    def index(self):
+      hostnames = self.conns.keys()
+      hostnames.sort()
+
+      return main_index(nodes=hostnames)
+
+   @cherrypy.expose
+   def node(self, hostname):
+      try:
+         uri, conn = self.conns[hostname]
+      except KeyError:
+         raise cherrypy.HTTPError(404, 'No such host: %s' % hostname)
+
       # Take the node info, and map the ugly list result from libvirt into a dict
-      node = maplist(self.conn.getInfo(), NODEINFOELEMENTS)
+      node = maplist(conn.getInfo(), NODEINFOELEMENTS)
       # Silly libvirt uses a different unit for node memory and domain memory
       node['memory'] = node['memory'] * 1024
 
       # Silly libvirt again, defined domains actually does NOT contain all defined domains,
       # but just the non-running ones. We also have no way of getting a list of names
       # for running domains, just the IDs.
-      domains1 = [self.conn.lookupByID(x) for x in self.conn.listDomainsID()]
-      domains2 = [self.conn.lookupByName(x) for x in self.conn.listDefinedDomains()]
+      domains1 = [conn.lookupByID(x) for x in conn.listDomainsID()]
+      domains2 = [conn.lookupByName(x) for x in conn.listDefinedDomains()]
 
       domains = {}
       memoryusage = 0   # Total memory usage counter
@@ -146,19 +165,22 @@ class Node(object):
       domainnames.sort()
 
       vars = {
-         'hostname':       self.conn.getHostname(),
+         'hostname':       conn.getHostname(),
          'node':           node,
          'domainnames':    domainnames,         'domains':        domains,
          # FIXME: these two are probably just as broken as listDefinedDomains
-         'networks':       self.conn.listDefinedNetworks(),
-         'storagePools':   self.conn.listDefinedStoragePools()
+         'networks':       conn.listDefinedNetworks(),
+         'storagePools':   conn.listDefinedStoragePools()
       }
       return node_index(**vars)
 
    @cherrypy.expose
-   def ajax_console(self, domainname):
+   def ajax_console(self, hostname, domainname):
       try:
-         domain = self.conn.lookupByName(domainname)
+         uri, conn = self.conns[hostname]
+         domain = conn.lookupByName(domainname)
+      except KeyError:
+         raise cherrypy.HTTPError(404, 'No such host: %s' % hostname)
       except libvirt.libvirtError, e:
          raise cherrypy.HTTPError(404, str(e))
 
@@ -177,9 +199,9 @@ class Node(object):
 
       # Build the info dictionary to be passed to rfbproxy.connectVNC
       info = {'vnchost': 'localhost', 'vncport': vncport}
-      if self.uri is not None:
+      if uri is not None:
          # Split the URI into 'scheme://userhostpart/x'
-         x = self.uri
+         x = uri
          scheme, x = x.split(':', 1)
          empty, empty, userhostpart, x = x.split('/', 3)
 
@@ -229,7 +251,7 @@ class Node(object):
 
 def getfactory(reactor):
    # Create a WSGI callable from our application
-   app = cherrypy.Application(Node(LIBVIRT_URI), "", APPCONFIG)
+   app = cherrypy.Application(Node(LIBVIRT_URIS), "", APPCONFIG)
 
    # Twisted needs a threadpool to run this in
    threads = threadpool.ThreadPool(minthreads=1, maxthreads=1, name='virtweb')

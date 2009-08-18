@@ -74,4 +74,4 @@ For example, set up your ~/.ssh/config as:
     PreferredAuthentications publickey
 
 in ./config.py
-set LIBVIRT_URI to: qemu+ssh://virthost/system
+set LIBVIRT_URIS to: ['qemu+ssh://virthost/system']

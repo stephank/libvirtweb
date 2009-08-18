@@ -2,15 +2,15 @@
 # Schemes besides qemu and qemu+ssh have not been tested.
 
 # Connect to the default local session daemon
-LIBVIRT_URI = None
+LIBVIRT_URIS = [None]
 
 # Same as above
-#LIBVIRT_URI = 'qemu:///session'
+#LIBVIRT_URIS = ['qemu:///session']
 
-# A remote system over an SSH tunnel.
+# Connect to a remote system over an SSH tunnel, and to the local session daemon.
 # This has only been tested with ~/.ssh/config set up to use
 # public key authentication for this host.
-#LIBVIRT_URI = 'qemu+ssh://user@node.local/system'
+#LIBVIRT_URIS = ['qemu+ssh://user@node.local/system', None]
 
 
 # For SSH tunnels, this is the fingerprint we will accept.

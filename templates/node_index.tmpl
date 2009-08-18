@@ -7,7 +7,7 @@
 #def head
 <script type="text/javascript">
 function openconsole(domain) {
-   new Ajax.Updater('console', '/ajax_console/' + domain,
+   new Ajax.Updater('console', '/ajax_console/$hostname/' + domain,
          { insertion: 'bottom', evalScripts: true });
 }
 </script>

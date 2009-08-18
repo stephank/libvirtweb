@@ -1,0 +1,23 @@
+#encoding utf-8
+#extends layout
+#def title
+   Index
+#end def
+
+#def head
+#end def
+
+<div class="block nodes">
+   <h1>Nodes</h1>
+   #if $nodes:
+      <ul>
+         #for $node in $nodes:
+            <li><a href="/node/$h($node)">$h($node)</a></li>
+         #end for
+      </ul>
+   #else:
+      <p>No nodes to list.</p>
+   #end if
+
+   <div class="clear"></div>
+</div>
