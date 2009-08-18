@@ -75,4 +75,3 @@ For example, set up your ~/.ssh/config as:
 
 in ./config.py
 set LIBVIRT_URI to: qemu+ssh://virthost/system
-set LOCALE = 'yourlocale' #for example: 'en_US.UTF-8' 
