@@ -2,6 +2,7 @@
 *.pyo
 *.class
 *.jar
+*~
 config.py
 server.cert
 server.key
