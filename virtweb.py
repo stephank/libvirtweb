@@ -152,7 +152,7 @@ class Node(object):
          # Prettify state name
          info['state'] = DOMAINSTATES[info['state']]
          # If we're running, calculate memory usage to the total
-         if info['state'] == 'Running':
+         if info['state'] in ['Running', 'Blocked']:
             memoryusage += info['memory']
          domains[domain.name()] = info
 
